@@ -5,7 +5,7 @@ Compute the score of similarity between two strings.
 `docker build -t mlserver .`
 
 # Run
-`docker un -itd --name mlserver mlserver`
+`docker run -itd --name mlserver mlserver`
 
 # Logs
 `docker logs mlserver`
