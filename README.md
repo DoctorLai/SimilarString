@@ -6,7 +6,7 @@ Compute the score of similarity between two strings.
 
 # Run
 Bind to Port 5000.
-`docker run -p 5000:5000/tcp -itd --name mlserver mlserver`
+`docker run -p 5000:5000 -itd --name mlserver mlserver`
 
 # Logs
 `docker logs mlserver` or `docker logs -f mlserver`
