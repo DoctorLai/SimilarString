@@ -14,3 +14,6 @@ Bind to Port 5000.
 # Usage
 `curl -X POST --data '{"s1":"this is a book", "s2":"that is a car"}' http://127.0.0.1:5000`
 > {"score": 0.22442716360092163}
+
+# Support
+If you find this useful, consider buy me a cup of coffee, thanks! https://www.buymeacoffee.com/y0BtG5R
