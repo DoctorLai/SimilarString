@@ -1,5 +1,5 @@
-# SimilarString
-Compute the score of similarity between two strings.
+# Similar String Server
+A Simple Server to Compute the score of similarity between two strings.
 
 # Build
 `docker build -t mlserver .`
