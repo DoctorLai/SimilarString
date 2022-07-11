@@ -5,13 +5,11 @@ Compute the score of similarity between two strings.
 `docker build -t mlserver .`
 
 # Run
-`docker run -itd --name mlserver mlserver`
+Bind to Port 5000.
+`docker run -p 5000:5000/tcp  --bind 0.0.0.0 -itd --name mlserver mlserver`
 
 # Logs
 `docker logs mlserver` or `docker logs -f mlserver`
 
-# Port
-5000
-
 # Usage
-`curl -x POST --data '{"s1":"this is a book", "s2":"that is a car"}' http://127.0.0.1:5000`
+`curl -X POST --data '{"s1":"this is a book", "s2":"that is a car"}' http://127.0.0.1:5000`
