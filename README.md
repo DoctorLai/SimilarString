@@ -1,4 +1,4 @@
-# Similar String Server
+# String Similarity Server
 A Simple Server to Compute the score of similarity between two strings.
 
 # Build
