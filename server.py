@@ -24,7 +24,7 @@ print("Similarity score:", cosine_scores.item())
 def score():
     data = request.get_json(force=True)
     print(data)
-    if s1 not in data or s2 not in data:
+    if "s1" not in data or "s2" not in data:
         return
     sentence1 = data['s1']
     sentence2 = data['s2']
