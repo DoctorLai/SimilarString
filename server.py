@@ -24,8 +24,12 @@ print("Similarity score:", cosine_scores.item())
 def score():
     data = request.get_json(force=True)
     print(data)
+    if s1 not in data or s2 not in data:
+        return
     sentence1 = data['s1']
     sentence2 = data['s2']
+    if not sentence1 or not sentence2:
+        return
     if 'test' in data:
         score = data['test']
     else:    
@@ -42,3 +46,4 @@ def score():
 if __name__ == "__main__":
     print("Starting the server....")    
     app.run(host='0.0.0.0', port=5000)
+
