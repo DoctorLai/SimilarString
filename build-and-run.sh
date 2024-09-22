@@ -13,5 +13,5 @@ docker rm $DOCKER_IMAGE || true
 docker build -t $DOCKER_IMAGE .
 
 # Run the server with restart policy
-docker run --name $DOCKER_IMAGE --restart always -p $HOST_PORT:5000 $DOCKER_IMAGE
+docker run --name $DOCKER_IMAGE --restart always -p $HOST_PORT:5000 $DOCKER_IMAGE &
 
