@@ -4,7 +4,7 @@ model:
   precision: 'float32'  # Options: 'float32', 'float16'
 
 cache:
-  enabled: true  # Enable or disable embedding caching
+  enabled: false  # Enable or disable embedding caching
 
 server:
   host: '0.0.0.0'

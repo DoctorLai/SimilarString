@@ -61,13 +61,15 @@ def score():
         score = cosine_scores.item()
     
     response = {
-        "score": score
+        "score": score,
+        "s1": sentence1,
+        "s2": sentence2
     }
     print(response)
     return jsonify(response), 200
 
 if __name__ == "__main__":
-    print("Starting the server....")
+    print("Starting the (Similar Sentences) erver....")
     
     # Run Flask with Gunicorn if in production mode (optional)
     import os
