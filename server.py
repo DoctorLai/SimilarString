@@ -1,24 +1,40 @@
 import json
-from sentence_transformers import SentenceTransformer, util
-import numpy as np
+import yaml
 from flask import Flask, request, jsonify
+from sentence_transformers import SentenceTransformer, util
+import torch
+
+# Load configuration from YAML file
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 app = Flask(__name__)
 
-print("Loading ML model...")
-model = SentenceTransformer('stsb-roberta-large')
-print("OK!")
+# Cache for sentence embeddings
+cache = {} if config["cache"]["enabled"] else None
 
-sentence1 = "I like Python because I can build AI applications"
-sentence2 = "I like Python because I can do data analytics"
-# encode sentences to get their embeddings
-embedding1 = model.encode(sentence1, convert_to_tensor=True)
-embedding2 = model.encode(sentence2, convert_to_tensor=True)
-# compute similarity scores of two embeddings
-cosine_scores = util.pytorch_cos_sim(embedding1, embedding2)
-print("Sentence 1:", sentence1)
-print("Sentence 2:", sentence2)
-print("Similarity score:", cosine_scores.item())
+# Function to get the device configuration
+def get_device():
+    if config["model"]["device"] == 'auto':
+        return 'cuda' if torch.cuda.is_available() else 'cpu'
+    return config["model"]["device"]
+
+# Initialize SentenceTransformer model based on YAML config
+print("Loading ML model...")
+model = SentenceTransformer(config["model"]["name"], device=get_device())
+print("Model loaded on", get_device())
+
+# Function to get embedding with optional caching
+def get_embedding(sentence):
+    if cache is not None and sentence in cache:
+        return cache[sentence]
+    
+    embedding = model.encode(sentence, convert_to_tensor=True, 
+                             dtype=torch.float16 if config["model"]["precision"] == 'float16' else torch.float32)
+    
+    if cache is not None:
+        cache[sentence] = embedding
+    return embedding
 
 @app.route('/', methods=['POST'])
 def score():
@@ -35,12 +51,12 @@ def score():
     if not sentence1 or not sentence2:
         return jsonify({"error": "'s1' and 's2' cannot be empty"}), 400
 
-    # Check if 'test' is in the data, otherwise calculate the score
+    # If 'test' is in the data, use it directly, otherwise calculate the score
     if 'test' in data:
         score = data['test']
     else:
-        embedding1 = model.encode(sentence1, convert_to_tensor=True)
-        embedding2 = model.encode(sentence2, convert_to_tensor=True)
+        embedding1 = get_embedding(sentence1)
+        embedding2 = get_embedding(sentence2)
         cosine_scores = util.pytorch_cos_sim(embedding1, embedding2)
         score = cosine_scores.item()
     
@@ -52,5 +68,31 @@ def score():
 
 if __name__ == "__main__":
     print("Starting the server....")
-    app.run(host='0.0.0.0', port=5000)
+    
+    # Run Flask with Gunicorn if in production mode (optional)
+    import os
+    if os.environ.get("FLASK_ENV") == "production":
+        from gunicorn.app.base import BaseApplication
+        
+        class FlaskApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                config = {key: value for key, value in self.options.items() if key in self.cfg.settings and value is not None}
+                for key, value in config.items():
+                    self.cfg.set(key, value)
+
+            def load(self):
+                return self.application
+
+        options = {
+            'bind': f"{config['server']['host']}:{config['server']['port']}",
+            'workers': config['server']['workers']
+        }
+        FlaskApplication(app, options).run()
+    else:
+        app.run(host=config['server']['host'], port=config['server']['port'])
 
