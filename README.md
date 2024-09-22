@@ -71,6 +71,25 @@ docker-compose up --build -d
 
 This will build and start the Flask application along with any additional services you define.
 
+To view the logs using docker-compose, run:
+
+```bash
+docker-compose logs -f
+```
+
+To restart the docker-compose container, run:
+
+```bash
+docker-compose down  # Stop the containers
+docker-compose up -d  # Start the containers in detached mode
+```
+
+Or simply:
+
+```
+docker-compose restart <service_name>
+```
+
 ## Configuration
 The application reads the following configurations from config.yaml:
 
