@@ -60,13 +60,13 @@ Start the app using the following command:
 FLASK_ENV=development flask run
 ```
 
-The server will be available at http://127.0.0.1:5000/.
+The server will be available at http://127.0.0.1:5000.
 
 ## Docker Compose (Optional)
 To use docker-compose to manage services, you can create a docker-compose.yml file and run the application with:
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 This will build and start the Flask application along with any additional services you define.
@@ -85,7 +85,7 @@ In production, the app is served using gunicorn. You can customize the number of
 The application exposes port 5000 by default. This can be modified in the docker run command or the config.yaml file.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 You can also run [./build-and-run.sh](./build-and-run.sh) to build the Docker image and run the server.
 
