@@ -1,7 +1,7 @@
 import json
 from sentence_transformers import SentenceTransformer, util
 import numpy as np
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -20,30 +20,37 @@ print("Sentence 1:", sentence1)
 print("Sentence 2:", sentence2)
 print("Similarity score:", cosine_scores.item())
 
-@app.route('/', methods=['POST']) 
+@app.route('/', methods=['POST'])
 def score():
     data = request.get_json(force=True)
-    print(data)
+    
+    # Check if both 's1' and 's2' are provided in the request
     if "s1" not in data or "s2" not in data:
-        return
+        return jsonify({"error": "Both 's1' and 's2' fields are required"}), 400
+    
     sentence1 = data['s1']
     sentence2 = data['s2']
+    
+    # Check if the sentences are not empty
     if not sentence1 or not sentence2:
-        return
+        return jsonify({"error": "'s1' and 's2' cannot be empty"}), 400
+
+    # Check if 'test' is in the data, otherwise calculate the score
     if 'test' in data:
         score = data['test']
-    else:    
+    else:
         embedding1 = model.encode(sentence1, convert_to_tensor=True)
-        embedding2 = model.encode(sentence2, convert_to_tensor=True) 
-        cosine_scores = util.pytorch_cos_sim(embedding1, embedding2)   
+        embedding2 = model.encode(sentence2, convert_to_tensor=True)
+        cosine_scores = util.pytorch_cos_sim(embedding1, embedding2)
         score = cosine_scores.item()
-    data = json.dumps({
+    
+    response = {
         "score": score
-    })
-    print(data)
-    return data 
+    }
+    print(response)
+    return jsonify(response), 200
 
 if __name__ == "__main__":
-    print("Starting the server....")    
+    print("Starting the server....")
     app.run(host='0.0.0.0', port=5000)
 
