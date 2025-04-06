@@ -17,8 +17,7 @@ jobs:
       - name: Ruff format
         uses: astral-sh/ruff-action@v1
         with:
-          args: check --fix --exit-zero
-
+          args: check
 
       - name: Set up environment
         run: |
