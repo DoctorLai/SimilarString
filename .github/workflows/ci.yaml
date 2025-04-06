@@ -15,11 +15,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ruff format
-        uses: ruff/ruff-action@v0.0.1
+        uses: astral-sh/ruff-action@v1
         with:
-          config: .ruff.toml
-          args: --fix --exit-zero
-          working-directory: .
+          args: check --fix --exit-zero
+
 
       - name: Set up environment
         run: |
