@@ -45,6 +45,16 @@ The response will contain the cosine similarity score between the two sentences.
 `docker logs mlserver` or `docker logs -f mlserver`
 ```
 
+7. Docke scripts
+A few handy shell scripts:
+- [build.sh](./build.sh): builds the docker container.
+- [stop.sh](./stop.sh): stops the docker container.
+- [run.sh](./run.sh): runs the ML server.
+- [restart.sh](./restart.sh): restarts the ML server aka [stop.sh](./stop.sh) and then [run.sh](./run.sh).
+- [build-and-run.sh]: is the combination of [build.sh](./build.sh) and [restart.sh](./restart.sh).
+
+Make sure you source [setup-env](./setup-env.sh) to set the variables first.
+
 ## Development (Without Docker)
 To run the application locally without Docker:
 
@@ -105,8 +115,8 @@ In production, the app is served using gunicorn. You can customize the number of
 ## Exposed Ports
 The application exposes port 5000 by default. This can be modified in the docker run command or the config.yaml file.
 
-## Test
-Use the following script to perform a basic integration test — it builds the Docker image, starts the server locally, sends a request, and verifies that the response has a 'status' of 'OK' with a status code of 200.
+## Tests
+Use the following script to perform a basic integration test — it builds the Docker image, starts the server locally, sends a request, and verifies that the response has a 'status' of 'OK' with a status code of 200. In particular, there are two tests:
 
 [integration-tests-docker.sh](./tests/integration-tests-docker.sh) tests the Docker image and [integration-tests-docker-compose.sh](./tests/integration-tests-docker-compose.sh) tests the [docker-compose.yml](./docker-compose.yml).
 
@@ -115,9 +125,11 @@ source ./setup-env.sh
 
 ## on success, exit code is 0.
 ## on failure, exit code is 1.
+## test basic docker setup
 ./tests/integration-tests-docker.sh
 
 ## on success, exit code is 0.
+## test docker compose
 ## on failure, exit code is 1.
 ./tests/integration-tests-docker-compose.sh
 
