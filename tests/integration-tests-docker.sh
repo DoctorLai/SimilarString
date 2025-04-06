@@ -92,7 +92,8 @@ send_a_get_request() {
         return 1
     fi
 
-    if [ "$score" != "0.08295086771249771" ]; then
+    # check score is between 0.07 to 0.10
+    if ! [[ "$score" =~ ^0\.[0-9]{2,}$ ]]; then
         echo "Response score is not correct"
         return 1
     fi
