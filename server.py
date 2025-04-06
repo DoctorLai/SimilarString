@@ -117,8 +117,11 @@ if __name__ == "__main__":
                 return self.application
 
         server_config = config.get("server", {})
+        server_host = server_config.get('host', '0.0.0.0')
+        server_port = server_config.get('port', 5000)
+        server_bind = f"{server_host}:{server_port}"
         options = {
-            "bind": f"{server_config.get('host', '0.0.0.0')}:{server_config.get('port', 5000)}",
+            "bind": server_bind,
             "workers": server_config.get("workers", 2),
         }
         FlaskApplication(app, options).run()
