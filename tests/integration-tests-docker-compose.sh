@@ -24,6 +24,9 @@ docker-compose down || true
 echo "Starting the server..."
 docker-compose up -d
 
+## list docker containers
+docker ps
+
 MAX_TIMEOUT_SEC=300
 while :
 do
@@ -36,6 +39,7 @@ do
         break
     fi
     echo "Server is not up yet. Sleep for 1 second $status..."
+    docker logs $DOCKER_COMPOSE_NAME 2>&1
     ## check if timeout
     if [ $MAX_TIMEOUT_SEC -le 0 ]; then
         echo "Timeout: Server did not start"

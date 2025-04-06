@@ -28,6 +28,9 @@ fi
 echo "Starting the server..."
 ./run.sh &
 
+## list docker containers
+docker ps
+
 MAX_TIMEOUT_SEC=300
 while :
 do
