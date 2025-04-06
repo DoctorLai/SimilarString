@@ -1,4 +1,3 @@
-import json
 import yaml
 import logging
 import os
@@ -117,9 +116,10 @@ if __name__ == "__main__":
             def load(self):
                 return self.application
 
+        server_config = config.get("server", {})
         options = {
-            "bind": f"{config.get('server', {}).get('host', '0.0.0.0')}:{config.get('server', {}).get('port', 5000)}",
-            "workers": config.get("server", {}).get("workers", 2),
+            "bind": f"{server_config.get('host', '0.0.0.0')}:{server_config.get('port', 5000)}",
+            "workers": server_config.get("workers", 2),
         }
         FlaskApplication(app, options).run()
     else:
