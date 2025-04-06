@@ -6,4 +6,5 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-./build.sh && ./restart.sh
+./stop.sh || true
+./run.sh

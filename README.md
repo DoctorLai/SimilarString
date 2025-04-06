@@ -1,4 +1,6 @@
 # Flask App with Sentence Transformers
+[![Similarity Sentence API CI](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml/badge.svg)](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml)
+
 This repository contains a Flask application that uses the SentenceTransformer model to compute the similarity between two input sentences. The application is containerized using Docker and is configured to run in both development and production environments using gunicorn.
 
 A Simple Server to Compute the score of similarity between two strings.
@@ -98,15 +100,40 @@ The application reads the following configurations from config.yaml:
 - Server Settings: Configure the host, port, and number of gunicorn workers.
 
 ## Production
-In production, the app is served using gunicorn. You can customize the number of workers by modifying the config.yaml file.
+In production, the app is served using gunicorn. You can customize the number of workers by modifying the [config.yaml](./config.yaml) file.
 
 ## Exposed Ports
 The application exposes port 5000 by default. This can be modified in the docker run command or the config.yaml file.
 
+## Test
+Use the following script to perform a basic integration test — it builds the Docker image, starts the server locally, sends a request, and verifies that the response has a 'status' of 'OK' with a status code of 200.
+
+[integration-tests-docker.sh](./tests/integration-tests-docker.sh) tests the Docker image and [integration-tests-docker-compose.sh](./tests/integration-tests-docker-compose.sh) tests the [docker-compose.yml](./docker-compose.yml).
+
+```bash
+source ./setup-env.sh
+
+## on success, exit code is 0.
+## on failure, exit code is 1.
+./tests/integration-tests-docker.sh
+
+## on success, exit code is 0.
+## on failure, exit code is 1.
+./tests/integration-tests-docker-compose.sh
+
+```
+
 ## License
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+This project is licensed under the [MIT License](./LICENSE).
 
-You can also run [./build-and-run.sh](./build-and-run.sh) to build the Docker image and run the server.
+## Contributing?
+Contribution are absolutely welcome! Please follow the guidance [here](./CONTRIBUTING.md)
 
-# Support
-If you find this useful, consider buy me a cup of coffee, thanks! https://www.buymeacoffee.com/y0BtG5R
+## Support me
+If you like this and want to support me in continuous development, you can do the following:
+- [Buy me a coffee](https://justyy.com/out/bmc)
+- [Sponsor me](https://github.com/sponsors/DoctorLai)
+- [Vote me as a witness](https://steemyy.com/witness-voting/?witness=justyy&action=approve)
+- [Set me a Witness Proxy if you are too lazy to vote](https://steemyy.com/witness-voting/?witness=justyy&action=proxy)
+
+<a rel="nofollow" href="http://steemyy.com/out/buymecoffee" target="_blank"><img src="https://user-images.githubusercontent.com/1764434/161362754-c45a85d3-5c80-4e10-b05c-62af49291d0b.png" alt="Buy me a Coffee"/></a>

@@ -1,0 +1,50 @@
+name: Similarity Sentence API CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ruff format
+        uses: astral-sh/ruff-action@v1
+        with:
+          args: check --config .ruff.toml
+
+      - name: Set up environment
+        run: |
+          source ./setup-env.sh
+          echo "SS_PATH=$SS_PATH" >> $GITHUB_ENV
+          echo "SS_DOCKER_IMAGE=$SS_DOCKER_IMAGE" >> $GITHUB_ENV
+          echo "RETRY_COUNT=$RETRY_COUNT" >> $GITHUB_ENV
+          echo "HOST_PORT=$HOST_PORT" >> $GITHUB_ENV
+          echo "FLASK_ENV=$FLASK_ENV" >> $GITHUB_ENV
+
+      # - name: Install dependencies
+      #   run: |
+      #     pip install transformers huggingface_hub
+
+      # - name: Log in to Hugging Face
+      #   run: |
+      #     echo "HF_HOME=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
+      #     huggingface-cli login --token ${{ secrets.HF_TOKEN }}
+
+      - name: Install docker-compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Run integration tests 0
+        run: ./tests/integration-tests-docker.sh
+
+      - name: Run integration tests 1
+        run: ./tests/integration-tests-docker-compose.sh
+

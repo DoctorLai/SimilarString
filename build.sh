@@ -6,4 +6,5 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-./build.sh && ./restart.sh
+# Build the Docker image
+docker build -t $SS_DOCKER_IMAGE .

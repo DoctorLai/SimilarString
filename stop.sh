@@ -6,4 +6,5 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-./build.sh && ./restart.sh
+docker stop $SS_DOCKER_IMAGE || true
+docker rm $SS_DOCKER_IMAGE

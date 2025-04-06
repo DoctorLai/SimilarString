@@ -1,9 +1,7 @@
 Flask
-requests
-numpy
 sentence-transformers
 pyyaml
 gunicorn
 Werkzeug
 huggingface-hub
-
+accelerate
