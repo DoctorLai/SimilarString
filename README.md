@@ -51,7 +51,7 @@ A few handy shell scripts:
 - [stop.sh](./stop.sh): stops the docker container.
 - [run.sh](./run.sh): runs the ML server.
 - [restart.sh](./restart.sh): restarts the ML server aka [stop.sh](./stop.sh) and then [run.sh](./run.sh).
-- [build-and-run.sh]: is the combination of [build.sh](./build.sh) and [restart.sh](./restart.sh).
+- [build-and-run.sh](./build-and-run.sh): is the combination of [build.sh](./build.sh) and [restart.sh](./restart.sh).
 
 Make sure you source [setup-env](./setup-env.sh) to set the variables first.
 
