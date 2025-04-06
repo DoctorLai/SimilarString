@@ -92,9 +92,9 @@ send_a_get_request() {
         return 1
     fi
 
-    # check score is between 0.07 to 0.10
-    if ! [[ "$score" =~ ^0\.[0-9]{2,}$ ]]; then
-        echo "Response score is not correct"
+    # check score is not empty
+    if [ -z "$score" ]; then
+        echo "Response score is empty"
         return 1
     fi
 

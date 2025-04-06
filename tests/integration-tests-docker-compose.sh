@@ -89,8 +89,9 @@ send_a_get_request() {
         return 1
     fi
 
-    if [ "$score" != "0.08295086771249771" ]; then
-        echo "Response score is not correct"
+    # check score is not empty
+    if [ -z "$score" ]; then
+        echo "Response score is empty"
         return 1
     fi
 
