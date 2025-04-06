@@ -1,0 +1,19 @@
+# Enable specific linting rules
+lint.select = ["E", "F", "W", "C"]
+
+# Exclude specific files or directories
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+# Set the maximum line length
+line-length = 88
+
+# Enable autofix for certain rules
+lint.fixable = ["E", "F"]
+
+# Specify target Python version
+target-version = "py39"

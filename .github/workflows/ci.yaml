@@ -1,0 +1,37 @@
+name: Similarity Sentence API CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ruff format
+        uses: ruff/ruff-action@v0.0.1
+        with:
+          config: .ruff.toml
+          args: --fix --exit-zero
+          working-directory: .
+
+      - name: Set up environment
+        run: |
+          source ./setup-env.sh
+          echo "SS_PATH=$SS_PATH" >> $GITHUB_ENV
+          echo "SS_DOCKER_IMAGE=$SS_DOCKER_IMAGE" >> $GITHUB_ENV
+          echo "RETRY_COUNT=$RETRY_COUNT" >> $GITHUB_ENV
+          echo "HOST_PORT=$HOST_PORT" >> $GITHUB_ENV
+          echo "FLASK_ENV=$FLASK_ENV" >> $GITHUB_ENV
+
+      - name: Run integration tests 1
+        run: ./tests/integration-tests-docker-compose.sh
+
+      - name: Run integration tests 2
+        run: ./tests/integration-tests-docker.sh
