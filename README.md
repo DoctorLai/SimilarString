@@ -38,11 +38,16 @@ Example curl command:
 ```bash
 curl -v -H "Content-type: application/json" --data '{"s1":"This is a Surface Studio Laptop","s2":"That is a car"}' http://127.0.0.1:5000
 ```
-The response will contain the cosine similarity score between the two sentences.
+
+The response will contain the cosine similarity score between the two sentences. Here is a sample JSON response:
+
+```json
+{'status': 'success', 's1': 'This is a Surface Studio Laptop', 's2': 'That is a car', 'score': 0.08295086771249771}
+```
 
 6. Show the Logs
 ```bash
-`docker logs mlserver` or `docker logs -f mlserver`
+docker logs -f mlserver
 ```
 
 7. Docke scripts
