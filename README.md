@@ -53,7 +53,7 @@ A few handy shell scripts:
 - [restart.sh](./restart.sh): restarts the ML server aka [stop.sh](./stop.sh) and then [run.sh](./run.sh).
 - [build-and-run.sh](./build-and-run.sh): is the combination of [build.sh](./build.sh) and [restart.sh](./restart.sh).
 
-Make sure you source [setup-env](./setup-env.sh) to set the variables first.
+Make sure you source [setup-env.sh](./setup-env.sh) to set the variables first.
 
 ## Development (Without Docker)
 To run the application locally without Docker:
