@@ -24,7 +24,6 @@ jobs:
           source ./setup-env.sh
           echo "SS_PATH=$SS_PATH" >> $GITHUB_ENV
           echo "SS_DOCKER_IMAGE=$SS_DOCKER_IMAGE" >> $GITHUB_ENV
-          echo "RETRY_COUNT=$RETRY_COUNT" >> $GITHUB_ENV
           echo "HOST_PORT=$HOST_PORT" >> $GITHUB_ENV
           echo "FLASK_ENV=$FLASK_ENV" >> $GITHUB_ENV
 
