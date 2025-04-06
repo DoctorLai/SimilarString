@@ -17,7 +17,7 @@ jobs:
       - name: Ruff format
         uses: astral-sh/ruff-action@v1
         with:
-          args: check
+          args: check --config .ruff.toml
 
       - name: Set up environment
         run: |
