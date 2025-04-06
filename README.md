@@ -1,4 +1,6 @@
 # Flask App with Sentence Transformers
+[![Similarity Sentence API CI](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml/badge.svg)](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml)
+
 This repository contains a Flask application that uses the SentenceTransformer model to compute the similarity between two input sentences. The application is containerized using Docker and is configured to run in both development and production environments using gunicorn.
 
 A Simple Server to Compute the score of similarity between two strings.
