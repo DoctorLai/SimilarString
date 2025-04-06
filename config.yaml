@@ -1,7 +1,7 @@
 model:
   name: 'paraphrase-MiniLM-L6-v2'  # distilroberta-base, paraphrase-MiniLM-L6-v2, stsb-roberta-large
   device: 'auto'  # Automatically choose 'cuda' if available, otherwise 'cpu'
-  precision: 'float32'  # Options: 'float32', 'float16'
+  precision: 'float16'  # Options: 'float32', 'float16'
 
 cache:
   enabled: false  # Enable or disable embedding caching

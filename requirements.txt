@@ -6,3 +6,4 @@ pyyaml
 gunicorn
 Werkzeug
 huggingface-hub
+hf_xet

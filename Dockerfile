@@ -14,6 +14,7 @@ RUN apt-get update && \
 # Install Python dependencies from requirements.txt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install huggingface_hub[hf_xet]
 
 # Add application code to the Docker image
 ADD . /app

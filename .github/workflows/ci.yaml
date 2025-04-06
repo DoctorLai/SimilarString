@@ -28,6 +28,15 @@ jobs:
           echo "HOST_PORT=$HOST_PORT" >> $GITHUB_ENV
           echo "FLASK_ENV=$FLASK_ENV" >> $GITHUB_ENV
 
+      - name: Install dependencies
+        run: |
+          pip install transformers huggingface_hub
+
+      - name: Log in to Hugging Face
+        run: |
+          echo "HF_HOME=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
+          huggingface-cli login --token ${{ secrets.HF_TOKEN }}
+
       - name: Install docker-compose
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
