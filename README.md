@@ -42,7 +42,12 @@ curl -v -H "Content-type: application/json" --data '{"s1":"This is a Surface Stu
 The response will contain the cosine similarity score between the two sentences. Here is a sample JSON response:
 
 ```json
-{'status': 'success', 's1': 'This is a Surface Studio Laptop', 's2': 'That is a car', 'score': 0.08295086771249771}
+{
+    'status': 'success', 
+    's1': 'This is a Surface Studio Laptop', 
+    's2': 'That is a car', 
+    'score': 0.08295086771249771
+}
 ```
 
 6. Show the Logs
@@ -79,14 +84,12 @@ FLASK_ENV=development flask run
 
 The server will be available at http://127.0.0.1:5000.
 
-## Docker Compose (Optional)
-To use docker-compose to manage services, you can create a docker-compose.yml file and run the application with:
+## Docker Compose
+You can use the `docker-compose` or `docker compose` to build and start the container:
 
 ```bash
 docker-compose up --build -d
 ```
-
-This will build and start the Flask application along with any additional services you define.
 
 To view the logs using docker-compose, run:
 
@@ -97,14 +100,14 @@ docker-compose logs -f
 To restart the docker-compose container, run:
 
 ```bash
-docker-compose down  # Stop the containers
-docker-compose up -d  # Start the containers in detached mode
+docker-compose down  # Stop the container
+docker-compose up -d  # Start the container in detached mode
 ```
 
 Or simply:
 
-```
-docker-compose restart <service_name>
+```bash
+docker-compose restart flask-app
 ```
 
 ## Configuration
