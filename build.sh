@@ -7,4 +7,4 @@ if [ -z "$SS_PATH" ]; then
 fi
 
 # Build the Docker image
-docker build -t $SS_DOCKER_IMAGE .
+docker build -t "$SS_DOCKER_IMAGE" "$SS_PATH"

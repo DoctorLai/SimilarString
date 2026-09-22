@@ -6,5 +6,5 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-docker stop $SS_DOCKER_IMAGE || true
-docker rm $SS_DOCKER_IMAGE
+docker stop "$SS_DOCKER_IMAGE" || true
+docker rm "$SS_DOCKER_IMAGE"

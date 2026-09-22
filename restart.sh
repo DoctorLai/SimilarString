@@ -6,5 +6,5 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-./stop.sh || true
-./run.sh
+"$SS_PATH/stop.sh" || true
+"$SS_PATH/run.sh"

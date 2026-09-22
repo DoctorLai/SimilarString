@@ -8,9 +8,9 @@ fi
 
 # Run the server with restart policy
 docker run \
-    -e FLASK_ENV=$FLASK_ENV\
-    --name $SS_DOCKER_IMAGE\
+  -e "FLASK_ENV=$FLASK_ENV" \
+  --name "$SS_DOCKER_IMAGE" \
     --restart always \
-    -p $HOST_PORT:5000\
-    -v `pwd`/config.yaml:/app/config.yaml \
-    $SS_DOCKER_IMAGE
+  -p "${SS_BIND_ADDRESS:-127.0.0.1}:$HOST_PORT:5000" \
+  -v "$SS_PATH/config.yaml:/app/config.yaml:ro" \
+  "$SS_DOCKER_IMAGE"

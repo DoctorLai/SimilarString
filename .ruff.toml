@@ -1,5 +1,5 @@
 # Enable specific linting rules
-lint.select = ["E", "F", "W", "C"]
+lint.select = ["E", "F", "W", "C", "I"]
 
 # Exclude specific files or directories
 exclude = [
@@ -7,13 +7,16 @@ exclude = [
     "__pycache__",
     "build",
     "dist",
+    ".venv",
+    "node_modules",
+    "coverage",
 ]
 
 # Set the maximum line length
 line-length = 88
 
 # Enable autofix for certain rules
-lint.fixable = ["E", "F"]
+lint.fixable = ["E", "F", "I"]
 
 # Specify target Python version
-target-version = "py39"
+target-version = "py312"

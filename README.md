@@ -1,159 +1,233 @@
-# Flask App with Sentence Transformers
-[![Similarity Sentence API CI](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml/badge.svg)](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml)
+# SimilarString
 
-This repository contains a Flask application that uses the SentenceTransformer model to compute the similarity between two input sentences. The application is containerized using Docker and is configured to run in both development and production environments using gunicorn.
+[![CI](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml/badge.svg)](https://github.com/DoctorLai/SimilarString/actions/workflows/ci.yaml)
+[![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Node tooling](https://img.shields.io/badge/Node.js%20tooling-%3E%3D22-339933?logo=nodedotjs&logoColor=white)](.nvmrc)
+[![License](https://img.shields.io/github/license/DoctorLai/SimilarString)](LICENSE)
+[![Code style: Ruff](https://img.shields.io/badge/code%20style-Ruff-D7FF64)](https://docs.astral.sh/ruff/)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
+[![Last commit](https://img.shields.io/github/last-commit/DoctorLai/SimilarString/main)](https://github.com/DoctorLai/SimilarString/commits/main/)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/graphs/commit-activity)
+[![Stars](https://img.shields.io/github/stars/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/stargazers)
+[![Watchers](https://img.shields.io/github/watchers/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/watchers)
+[![Forks](https://img.shields.io/github/forks/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/forks)
+[![Open issues](https://img.shields.io/github/issues/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/issues)
+[![Open PRs](https://img.shields.io/github/issues-pr/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString/pulls)
+[![Repository size](https://img.shields.io/github/repo-size/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString)
+[![Top language](https://img.shields.io/github/languages/top/DoctorLai/SimilarString)](https://github.com/DoctorLai/SimilarString)
+[![Privacy](https://img.shields.io/badge/privacy-self--hosted-18794E)](PRIVACY.md)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/DoctorLai/SimilarString)
 
-A Simple Server to Compute the score of similarity between two strings.
+A self-hosted HTTP API for comparing the meaning of two sentences. SimilarString runs a
+SentenceTransformer locally and returns cosine similarity, using Flask and Gunicorn. Use it for
+paraphrase checks, duplicate detection, or comparing short text in an existing application.
 
-## Features
-- Flask Backend: A simple API built with Flask that accepts two sentences and returns their cosine similarity score.
-- Sentence Transformers: Uses the SentenceTransformer model to encode sentences and compute their similarity.
-- YAML Configurations: Reads settings such as model name, device configuration, and server options from a YAML file (config.yaml).
-- Gunicorn: In production, the app is served using gunicorn for improved performance.
+The current snapshot version is in [VERSION](VERSION); changes are recorded in
+[CHANGELOG.md](CHANGELOG.md). There is no browser UI, Chrome extension, or hosted public API.
+Node.js is only used for contributor tooling.
 
-## Prerequisites
-### Docker
-- Python 3.x (if you want to run it locally without Docker)
-- docker-compose (optional, if you want to use it to manage services)
+## Quick Start
 
-## Getting Started
-1. Clone the Repository
-2. Modify the [config.yaml](./config.yaml)
-3. Build and Run the Docker Container
-Build the Docker image and run the container:
+With Docker installed:
+
 ```bash
-docker build -t mlserver .
-docker run -p 5000:5000 mlserver
-```
-By default, the application runs in production mode with gunicorn.
-4. Running in Development Mode
-If you want to run the app in development mode with Flask’s built-in server and auto-reload, override the FLASK_ENV environment variable:
-```bash
-docker run -p 5000:5000 -e FLASK_ENV=development mlserver
-```
-5. Accessing the API
-Once the Docker container is running, you can send a POST request to the server to compute the sentence similarity.
-
-Example curl command:
-```bash
-curl -v -H "Content-type: application/json" --data '{"s1":"This is a Surface Studio Laptop","s2":"That is a car"}' http://127.0.0.1:5000
+git clone https://github.com/DoctorLai/SimilarString.git
+cd SimilarString
+docker build -t similarstring .
+docker run --rm --name similarstring -p 127.0.0.1:5000:5000 similarstring
 ```
 
-The response will contain the cosine similarity score between the two sentences. Here is a sample JSON response:
+The first startup downloads the configured model from Hugging Face. Wait until `/health` responds
+before sending similarity requests. In another terminal:
+
+```bash
+curl --fail http://127.0.0.1:5000/health
+curl --fail-with-body --header 'Content-Type: application/json' \
+    --data '{"s1":"This is a Surface Studio Laptop","s2":"That is a car"}' \
+    http://127.0.0.1:5000/
+```
+
+Illustrative response; the exact score depends on the model and precision:
 
 ```json
 {
-    'status': 'success', 
-    's1': 'This is a Surface Studio Laptop', 
-    's2': 'That is a car', 
-    'score': 0.08295086771249771
+  "status": "success",
+  "s1": "This is a Surface Studio Laptop",
+  "s2": "That is a car",
+  "score": 0.083
 }
 ```
 
-6. Show the Logs
-```bash
-docker logs -f mlserver
-```
+## API
 
-7. Docke scripts
-A few handy shell scripts:
-- [build.sh](./build.sh): builds the docker container.
-- [stop.sh](./stop.sh): stops the docker container.
-- [run.sh](./run.sh): runs the ML server.
-- [restart.sh](./restart.sh): restarts the ML server aka [stop.sh](./stop.sh) and then [run.sh](./run.sh).
-- [build-and-run.sh](./build-and-run.sh): is the combination of [build.sh](./build.sh) and [restart.sh](./restart.sh).
+| Endpoint      | Request                                           | Response                                                         |
+| ------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `POST /`      | JSON object with non-empty strings `s1` and `s2`  | `200`, original strings and numeric `score`                      |
+| `GET /`       | The same JSON body; retained for existing clients | Same response as POST                                            |
+| `GET /health` | No body                                           | `200`, `status: "ok"`, snapshot `version`, `model`, and `device` |
 
-Make sure you source [setup-env.sh](./setup-env.sh) to set the variables first.
+Prefer POST: GET request bodies are not reliably forwarded by all clients and proxies. Text is
+trimmed and lowercased before encoding; the response preserves the original strings. Cosine
+similarity is theoretically between -1 and 1, subject to floating-point rounding. It is not a
+probability or a percentage, and a useful matching threshold depends on your dataset.
 
-## Development (Without Docker)
-To run the application locally without Docker:
+Malformed JSON, non-object payloads, missing fields, non-string values, and whitespace-only strings
+return `400` with `{"status":"error","message":"..."}`. Requests exceeding the configured byte limit
+return a JSON `413` error. Other HTTP errors use Flask's default responses.
 
-1. Install Dependencies
-First, ensure you have Python 3.x installed, then install the necessary Python packages:
+The legacy optional `test` field still bypasses inference and echoes its value as `score`. It exists
+for compatibility with diagnostic clients. Do not treat caller-supplied test scores as model
+results.
 
-```bash
-pip install -r requirements.txt
-```
-
-2. Start the Flask Application
-Start the app using the following command:
-
-```bash
-FLASK_ENV=development flask run
-```
-
-The server will be available at http://127.0.0.1:5000.
-
-## Docker Compose
-You can use the `docker-compose` or `docker compose` to build and start the container:
-
-```bash
-docker-compose up --build -d
-```
-
-To view the logs using docker-compose, run:
-
-```bash
-docker-compose logs -f
-```
-
-To restart the docker-compose container, run:
-
-```bash
-docker-compose down  # Stop the container
-docker-compose up -d  # Start the container in detached mode
-```
-
-Or simply:
-
-```bash
-docker-compose restart flask-app
-```
+Health checks do not perform inference. A successful check confirms that this process has loaded its
+model and can serve HTTP; it does not measure model quality or GPU health.
 
 ## Configuration
-The application reads the following configurations from config.yaml:
 
-- Model Settings: Specify the model name (e.g., paraphrase-MiniLM-L6-v2), device (auto, cuda, or cpu), and precision (float32 or float16).
-- Caching: Enable or disable caching for sentence embeddings.
-- Server Settings: Configure the host, port, and number of gunicorn workers.
+Edit [config.yaml](config.yaml), or set `SIMILARSTRING_CONFIG` to another YAML file. The default
+file is resolved relative to the service, not your current directory. Restart the process after
+changes.
 
-## Production
-In production, the app is served using gunicorn. You can customize the number of workers by modifying the [config.yaml](./config.yaml) file.
+| Setting                    | Shipped value             | Meaning                                                                |
+| -------------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| `model.name`               | `paraphrase-MiniLM-L6-v2` | Hugging Face model identifier or local model directory                 |
+| `model.device`             | `auto`                    | CUDA when available, otherwise CPU; explicit PyTorch devices also work |
+| `model.precision`          | `float32`                 | `float32` or `float16`; half precision needs compatible hardware       |
+| `cache.enabled`            | `false`                   | Cache normalized input text and embeddings in process memory           |
+| `cache.max_size`           | `1024`                    | Maximum entries per worker; least-recently-used entries are evicted    |
+| `server.host`              | `0.0.0.0`                 | Bind address inside the process/container                              |
+| `server.port`              | `5000`                    | Internal HTTP port                                                     |
+| `server.workers`           | `4`                       | Gunicorn worker processes; each has its own cache and memory budget    |
+| `server.debug`             | `false`                   | Development debugger; never enable on an exposed service               |
+| `server.max_request_bytes` | `1048576`                 | Maximum JSON request body size, in bytes                               |
 
-## Exposed Ports
-The application exposes port 5000 by default. This can be modified in the docker run command or the config.yaml file.
+The shipped model targets English. For multilingual input, including simplified and traditional
+Chinese, select a suitable model such as `paraphrase-multilingual-MiniLM-L12-v2` and evaluate it on
+your own examples. JSON accepts Unicode, but that does not guarantee model accuracy in every
+language. Models also truncate inputs beyond their tokenizer's maximum length.
 
-## Tests
-Use the following script to perform a basic integration test — it builds the Docker image, starts the server locally, sends a request, and verifies that the response has a 'status' of 'OK' with a status code of 200. In particular, there are two tests:
+## Docker Compose
 
-[integration-tests-docker.sh](./tests/integration-tests-docker.sh) tests the Docker image and [integration-tests-docker-compose.sh](./tests/integration-tests-docker-compose.sh) tests the [docker-compose.yml](./docker-compose.yml).
+Use Docker Compose v2:
 
 ```bash
-source ./setup-env.sh
-
-## on success, exit code is 0.
-## on failure, exit code is 1.
-## test basic docker setup
-./tests/integration-tests-docker.sh
-
-## on success, exit code is 0.
-## test docker compose
-## on failure, exit code is 1.
-./tests/integration-tests-docker-compose.sh
-
+docker compose up --build --detach --wait --wait-timeout 300
+docker compose logs --follow flask-app
+docker compose down
 ```
 
-## License
-This project is licensed under the [MIT License](./LICENSE).
+Compose mounts the configuration read-only and keeps downloaded models in a named volume. Normal
+`down` preserves that volume; `down --volumes` removes the model cache. Set `HOST_PORT=8080` to
+change only the published port. Keep the internal port at 5000 unless you also update the mapping.
 
-## Contributing?
-Contribution are absolutely welcome! Please follow the guidance [here](./CONTRIBUTING.md)
+Compose and the helper scripts publish to `127.0.0.1` by default. Set `SS_BIND_ADDRESS` explicitly
+for remote access, with authentication, TLS, and rate limiting at a reverse proxy. The Python
+service itself has no authentication; [SECURITY.md](SECURITY.md) covers deployment precautions.
 
-## Support me
-If you like this and want to support me in continuous development, you can do the following:
+The image runs as a non-root user and installs CPU PyTorch wheels by default. GPU deployments can
+pass `--build-arg TORCH_INDEX_URL=...` with a compatible index from the
+[PyTorch installation guide](https://pytorch.org/get-started/locally/) and run with `--gpus all`.
+GPU operation requires an NVIDIA-enabled Docker host and is not exercised by the CPU CI checks.
+
+Existing helpers remain available after `source ./setup-env.sh`: [build.sh](build.sh),
+[run.sh](run.sh), [stop.sh](stop.sh), [restart.sh](restart.sh), and
+[build-and-run.sh](build-and-run.sh). Set `SS_DOCKER_IMAGE`, `HOST_PORT`, or `FLASK_ENV` before
+sourcing to override their defaults. The run helper stays attached to container output.
+
+## Run Without Docker
+
+Use Python 3.12 or 3.13. On Linux/macOS, for a CPU installation:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6,<3'
+python -m pip install -r requirements.txt
+python server.py
+```
+
+This uses Flask's development server and the YAML host/port settings. Set `server.host` to
+`127.0.0.1` for local-only use. To use Gunicorn on a supported Unix host:
+
+```bash
+FLASK_ENV=production python server.py
+```
+
+Model downloads need network access on first use. A cached or local model can run offline; see
+[SUPPORT.md](SUPPORT.md). Reduce worker count if model copies exceed your memory budget.
+
+## Development Checks
+
+From a repository checkout, activate a Python virtual environment, install the lightweight test
+dependencies, and use Node.js 22 or newer (`nvm use` reads [.nvmrc](.nvmrc)):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+npm ci
+npm run check
+```
+
+| Command                        | Purpose                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `npm run format`               | Format Python with Ruff and Markdown/JSON/YAML with Prettier               |
+| `npm run format:check`         | Check formatting without editing files                                     |
+| `npm run lint`                 | Run Ruff checks, including imports                                         |
+| `npm run lint:fix`             | Apply Ruff's supported automatic fixes                                     |
+| `npm test`                     | Run deterministic unit tests without downloading a model                   |
+| `npm run coverage`             | Run tests and require at least 90% for statements, functions, and branches |
+| `npm run build`                | Validate Python syntax and create a runtime source ZIP under `dist/`       |
+| `npm run check` / `npm run ci` | Check formatting, lint, coverage, and the runtime build                    |
+| `npm run test:integration`     | Build and test Docker and Compose with the actual model                    |
+
+The ZIP uses the date in [VERSION](VERSION). It contains runtime sources and policies, not installed
+dependencies, model weights, or contributor tooling. It is not a Chrome Web Store package. Use a
+repository checkout for development commands. Existing images are built with Docker, not npm.
+
+Unit tests replace the ML boundary with deterministic doubles; container tests cover the real model.
+Smoke-script regression tests also need Bash and jq; they use a local curl stub and skip if those
+tools are missing. Check pytest's summary for skipped tests. Integration tests require Docker,
+Compose v2, Bash, curl, jq, and network access:
+
+```bash
+./tests/integration-tests-docker.sh
+./tests/integration-tests-docker-compose.sh
+```
+
+Each integration run uses a separate container/project and an ephemeral local port, then cleans up
+its resources. To smoke-test an already running server, run `./test_ml_server.sh`; set `SS_URL` to
+select another address.
+
+The integration tests use fresh model caches, so even a cached Docker image can require a model
+download on each run. HTTP is unavailable until the model has loaded. The smoke script prints a
+startup message and buffers transient curl errors; a failed startup prints diagnostics and exits
+nonzero. The Docker test also prints a command for following the container's live startup logs.
+
+The default startup retry budget is 300 seconds. For a slower download, increase it for both Docker
+and Compose tests:
+
+```bash
+SS_STARTUP_TIMEOUT=600 npm run test:integration
+```
+
+CI checks Python 3.12 and 3.13 and runs both container tests. Coverage appears in the Actions job
+summary and an updated bot comment on same-repository pull requests. Fork and Dependabot pull
+requests receive the summary only because their tokens cannot write comments. Repository policy must
+allow `pull-requests: write` for comments. No coverage artifacts or external coverage-service
+uploads are configured. The dynamic repository badges above do not write to the protected main
+branch.
+
+## Project Policies
+
+- [Contributing](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md)
+- [Support and troubleshooting](SUPPORT.md)
+- [Security reporting](SECURITY.md) and [Privacy](PRIVACY.md)
+- [Changelog](CHANGELOG.md) and [MIT license](LICENSE)
+
+## Support Development
+
 - [Buy me a coffee](https://justyy.com/out/bmc)
-- [Sponsor me](https://github.com/sponsors/DoctorLai)
-- [Vote me as a witness](https://steemyy.com/witness-voting/?witness=justyy&action=approve)
-- [Set me a Witness Proxy if you are too lazy to vote](https://steemyy.com/witness-voting/?witness=justyy&action=proxy)
-
-<a rel="nofollow" href="http://steemyy.com/out/buymecoffee" target="_blank"><img src="https://user-images.githubusercontent.com/1764434/161362754-c45a85d3-5c80-4e10-b05c-62af49291d0b.png" alt="Buy me a Coffee"/></a>
+- [Sponsor on GitHub](https://github.com/sponsors/DoctorLai)
+- [Vote for my witness](https://steemyy.com/witness-voting/?witness=justyy&action=approve)
+- [Set a witness proxy](https://steemyy.com/witness-voting/?witness=justyy&action=proxy)

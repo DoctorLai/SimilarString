@@ -1,0 +1,28 @@
+{
+  "name": "similarstring-tools",
+  "private": true,
+  "description": "Development commands for the SimilarString Python API",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "format": "python -m ruff format . && prettier --write .",
+    "format:check": "python -m ruff format --check . && prettier --check .",
+    "lint": "python -m ruff check .",
+    "lint:fix": "python -m ruff check --fix .",
+    "test": "python -m pytest -q",
+    "test:docker": "bash tests/integration-tests-docker.sh",
+    "test:compose": "bash tests/integration-tests-docker-compose.sh",
+    "test:integration": "npm run test:docker && npm run test:compose",
+    "coverage": "python -m pytest -q --cov --cov-report=term-missing --cov-report=json && npm run coverage:report",
+    "coverage:report": "python scripts/project.py coverage-report",
+    "build": "python scripts/project.py build",
+    "check": "npm run format:check && npm run lint && npm run coverage && npm run build",
+    "ci": "npm run check"
+  },
+  "devDependencies": {
+    "prettier": "3.9.8"
+  }
+}

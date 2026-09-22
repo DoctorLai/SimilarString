@@ -1,14 +1,20 @@
-version: '3.3'
-
 services:
   flask-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      args:
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
     ports:
-      - "5000:5000"
+      - "${SS_BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-5000}:5000"
     environment:
-      FLASK_ENV: production  # Change to 'development' for dev mode
+      FLASK_ENV: production
+    healthcheck:
+      start_period: ${SS_STARTUP_TIMEOUT:-300}s
     volumes:
-      - .:/app  # Optional: Mount the current directory to the container for easier development
+      - ./config.yaml:/app/config.yaml:ro
+      - model-cache:/home/app/.cache/huggingface
+    init: true
+    restart: unless-stopped
 
+volumes:
+  model-cache:

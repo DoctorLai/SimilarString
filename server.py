@@ -1,26 +1,38 @@
-import yaml
 import logging
 import os
-from flask import Flask, request, jsonify
-from sentence_transformers import SentenceTransformer, util
-import torch
+from collections import OrderedDict
+from pathlib import Path
+from threading import Lock
 
-# Set up logging
+import torch
+import yaml
+from flask import Flask, jsonify, request
+from sentence_transformers import SentenceTransformer, util
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load configuration from YAML file
-with open("config.yaml", "r") as file:
+ROOT = Path(__file__).resolve().parent
+VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+config_path = Path(os.environ.get("SIMILARSTRING_CONFIG", ROOT / "config.yaml"))
+with config_path.open(encoding="utf-8") as file:
     config = yaml.safe_load(file)
+if not isinstance(config, dict):
+    raise ValueError("Configuration must be a YAML mapping")
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = config.get("server", {}).get(
+    "max_request_bytes", 1048576
+)
 
-# Cache for sentence embeddings
 cache_enabled = config.get("cache", {}).get("enabled", False)
-cache = {} if cache_enabled else None
+cache_max_size = config.get("cache", {}).get("max_size", 1024)
+if cache_enabled and (not isinstance(cache_max_size, int) or cache_max_size < 1):
+    raise ValueError("cache.max_size must be a positive integer")
+cache = OrderedDict() if cache_enabled else None
+cache_lock = Lock()
 
 
-# Function to get the device configuration
 def get_device():
     device_config = config.get("model", {}).get("device", "auto")
     if device_config == "auto":
@@ -28,37 +40,65 @@ def get_device():
     return device_config
 
 
-# Initialize SentenceTransformer model
 logger.info("Loading ML model...")
 model_name = config.get("model", {}).get("name", "all-MiniLM-L6-v2")
 model_precision = config.get("model", {}).get("precision", "float32")
+if model_precision not in ("float16", "float32"):
+    raise ValueError("model.precision must be float16 or float32")
 device = get_device()
 model = SentenceTransformer(model_name, device=device)
-logger.info(f"Model '{model_name}' loaded on {device} with precision {model_precision}")
+if model_precision == "float16":
+    model.half()
+else:
+    model.float()
+logger.info(
+    "Model '%s' loaded on %s with precision %s", model_name, device, model_precision
+)
 logger.info("ML model loaded successfully.")
 
 
-# Function to get embedding with optional caching
 def get_embedding(sentence):
     sentence = sentence.strip().lower()
-    if cache is not None and sentence in cache:
-        return cache[sentence]
+    if cache is not None:
+        with cache_lock:
+            if sentence in cache:
+                cache.move_to_end(sentence)
+                return cache[sentence]
 
-    embedding = model.encode(
-        sentence,
-        convert_to_tensor=True,
-        dtype=torch.float16 if model_precision == "float16" else torch.float32,
-    )
+    embedding = model.encode(sentence, convert_to_tensor=True)
 
     if cache is not None:
-        cache[sentence] = embedding
+        with cache_lock:
+            cache[sentence] = embedding
+            cache.move_to_end(sentence)
+            while len(cache) > cache_max_size:
+                cache.popitem(last=False)
 
     return embedding
 
 
-@app.route("/", methods=["GET"])
+@app.get("/health")
+def health():
+    return jsonify(
+        {"status": "ok", "version": VERSION, "model": model_name, "device": device}
+    )
+
+
+@app.errorhandler(413)
+def request_too_large(error):
+    return jsonify(
+        {"status": "error", "message": "Request body exceeds the configured size limit"}
+    ), 413
+
+
+@app.route("/", methods=["GET", "POST"])
 def score():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True, silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify(
+            {"status": "error", "message": "Request body must be a JSON object"}
+        ), 400
 
     if not data or "s1" not in data or "s2" not in data:
         return jsonify(
@@ -67,6 +107,11 @@ def score():
 
     sentence1 = data["s1"]
     sentence2 = data["s2"]
+
+    if not isinstance(sentence1, str) or not isinstance(sentence2, str):
+        return jsonify(
+            {"status": "error", "message": "'s1' and 's2' must be strings"}
+        ), 400
 
     if not sentence1.strip() or not sentence2.strip():
         return jsonify(
@@ -87,11 +132,11 @@ def score():
         "s2": sentence2,
         "score": score_value,
     }
-    logger.info(f"Response: {response}")
+    logger.info("Similarity request completed")
     return jsonify(response), 200
 
 
-if __name__ == "__main__":
+def main():
     logger.info("Starting the (Similar Sentences) server...")
 
     if os.environ.get("FLASK_ENV") == "production":
@@ -117,8 +162,8 @@ if __name__ == "__main__":
                 return self.application
 
         server_config = config.get("server", {})
-        server_host = server_config.get('host', '0.0.0.0')
-        server_port = server_config.get('port', 5000)
+        server_host = server_config.get("host", "0.0.0.0")
+        server_port = server_config.get("port", 5000)
         server_bind = f"{server_host}:{server_port}"
         options = {
             "bind": server_bind,
@@ -130,5 +175,9 @@ if __name__ == "__main__":
         app.run(
             host=config.get("server", {}).get("host", "0.0.0.0"),
             port=config.get("server", {}).get("port", 5000),
-            debug=config.get("server", {}).get("debug", True),
+            debug=config.get("server", {}).get("debug", False),
         )
+
+
+if __name__ == "__main__":
+    main()
