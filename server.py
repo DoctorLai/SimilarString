@@ -27,7 +27,11 @@ app.config["MAX_CONTENT_LENGTH"] = config.get("server", {}).get(
 
 cache_enabled = config.get("cache", {}).get("enabled", False)
 cache_max_size = config.get("cache", {}).get("max_size", 1024)
-if cache_enabled and (not isinstance(cache_max_size, int) or cache_max_size < 1):
+if cache_enabled and (
+    isinstance(cache_max_size, bool)
+    or not isinstance(cache_max_size, int)
+    or cache_max_size < 1
+):
     raise ValueError("cache.max_size must be a positive integer")
 cache = OrderedDict() if cache_enabled else None
 cache_lock = Lock()

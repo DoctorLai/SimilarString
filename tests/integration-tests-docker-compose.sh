@@ -19,7 +19,7 @@ cleanup() {
   if [[ "$result" -ne 0 ]]; then
     compose logs --no-color || true
   fi
-  compose down --volumes || true
+  compose down --volumes --rmi local || true
 }
 trap cleanup EXIT
 

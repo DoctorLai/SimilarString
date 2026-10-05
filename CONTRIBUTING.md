@@ -75,15 +75,18 @@ commands you ran. Keep unrelated cleanup in a separate change. Maintainers may r
 before merging; direct writes to protected branches are not needed.
 
 CI publishes a coverage table to the job summary. Same-repository PRs also receive one bot comment,
-updated on reruns when token permissions allow. Forks and Dependabot PRs use the summary only. No
-coverage reports are uploaded as artifacts or sent to an external coverage service.
+updated on reruns when token permissions allow. Quality jobs use read-only tokens; a separate
+publisher receives the report as data without checking out or executing PR code. Forks and
+Dependabot PRs use the summary only. No coverage reports are uploaded as artifacts or sent to an
+external coverage service.
 
 ## Snapshot Versions
 
 This service is not published to npm or PyPI. For a new user-facing snapshot, update
 [VERSION](VERSION) with an ISO date (`YYYY-MM-DD`) and add an entry to [CHANGELOG.md](CHANGELOG.md).
 Multiple changes for the same snapshot can share that date. The health endpoint and ZIP filename
-read the same file.
+read the same file. Builds require canonical `YYYY-MM-DD` dates; basic and ISO week-date forms are
+rejected.
 
 Questions belong in [GitHub issues](https://github.com/DoctorLai/SimilarString/issues); see
 [SUPPORT.md](SUPPORT.md) for the information needed to reproduce a problem.

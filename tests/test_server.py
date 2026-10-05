@@ -178,7 +178,7 @@ def test_cache_normalizes_and_evicts_least_recently_used(load_server):
     assert server.model.encode.call_count == 4
 
 
-@pytest.mark.parametrize("size", [0, -1, "unlimited"])
+@pytest.mark.parametrize("size", [0, -1, "unlimited", True, False, 1.5, None])
 def test_invalid_cache_limit_is_rejected(load_server, size):
     with pytest.raises(ValueError, match="cache.max_size"):
         load_server({"cache": {"enabled": True, "max_size": size}})

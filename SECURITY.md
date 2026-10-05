@@ -38,6 +38,8 @@ with synthetic input. This is a volunteer-maintained project; there is no guaran
 ## CI Permissions
 
 PR code is tested using `pull_request`, not a privileged `pull_request_target` checkout. Actions are
-pinned to verified commit IDs and dependency updates are proposed through Dependabot. Only the
-quality job requests PR-comment write permission; fork and Dependabot runs do not attempt comments.
-No workflow commits generated files to `main` or uploads coverage data to a third-party service.
+pinned to verified commit IDs and dependency updates are proposed through Dependabot. Quality jobs
+use read-only tokens. Only a separate coverage-comment publisher requests PR-comment write
+permission; it receives the report as job-output data and never checks out or executes PR code. Fork
+and Dependabot runs do not attempt comments. No workflow commits generated files to `main` or
+uploads coverage data to a third-party service.

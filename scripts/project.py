@@ -26,7 +26,8 @@ RUNTIME_FILES = (
 
 def build_archive(root=ROOT):
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
-    date.fromisoformat(version)
+    if date.fromisoformat(version).isoformat() != version:
+        raise ValueError("VERSION must use YYYY-MM-DD format")
     for filename in RUNTIME_FILES:
         if not (root / filename).is_file():
             raise FileNotFoundError(filename)

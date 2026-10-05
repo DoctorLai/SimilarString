@@ -11,6 +11,11 @@ PyPI distribution, or Chrome extension.
   Failed startup still reports diagnostics and exits nonzero.
 - `SS_STARTUP_TIMEOUT` configures the startup budget for Docker and Compose tests; the default
   remains 300 seconds.
+- CI quality jobs use read-only tokens; coverage comments are published by a separate job that does
+  not check out or execute PR code.
+- Runtime ZIP builds reject noncanonical snapshot dates, and enabled caches reject boolean size
+  limits.
+- Compose integration cleanup removes project-local built images as well as containers and volumes.
 
 ## 2026-09-21
 

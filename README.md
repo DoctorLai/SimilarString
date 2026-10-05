@@ -101,6 +101,9 @@ changes.
 | `server.debug`             | `false`                   | Development debugger; never enable on an exposed service               |
 | `server.max_request_bytes` | `1048576`                 | Maximum JSON request body size, in bytes                               |
 
+With caching enabled, `cache.max_size` must be a positive integer; YAML booleans are not valid
+sizes.
+
 The shipped model targets English. For multilingual input, including simplified and traditional
 Chinese, select a suitable model such as `paraphrase-multilingual-MiniLM-L12-v2` and evaluate it on
 your own examples. JSON accepts Unicode, but that does not guarantee model accuracy in every
@@ -196,8 +199,8 @@ Compose v2, Bash, curl, jq, and network access:
 ```
 
 Each integration run uses a separate container/project and an ephemeral local port, then cleans up
-its resources. To smoke-test an already running server, run `./test_ml_server.sh`; set `SS_URL` to
-select another address.
+its resources. Compose also removes the test project's locally built image. To smoke-test an already
+running server, run `./test_ml_server.sh`; set `SS_URL` to select another address.
 
 The integration tests use fresh model caches, so even a cached Docker image can require a model
 download on each run. HTTP is unavailable until the model has loaded. The smoke script prints a
@@ -214,7 +217,8 @@ SS_STARTUP_TIMEOUT=600 npm run test:integration
 CI checks Python 3.12 and 3.13 and runs both container tests. Coverage appears in the Actions job
 summary and an updated bot comment on same-repository pull requests. Fork and Dependabot pull
 requests receive the summary only because their tokens cannot write comments. Repository policy must
-allow `pull-requests: write` for comments. No coverage artifacts or external coverage-service
+allow `pull-requests: write` for comments. Quality jobs have read-only tokens; a separate publisher
+posts the comment without checking out PR code. No coverage artifacts or external coverage-service
 uploads are configured. The dynamic repository badges above do not write to the protected main
 branch.
 

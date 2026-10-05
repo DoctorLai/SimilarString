@@ -21,7 +21,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
+    outputs:
+      coverage_report: ${{ steps.coverage_output.outputs.report }}
     strategy:
       fail-fast: false
       matrix:
@@ -50,19 +51,41 @@ jobs:
       - name: Coverage summary
         if: ${{ always() && hashFiles('coverage/coverage.json') != '' }}
         run: python scripts/project.py coverage-report >> "$GITHUB_STEP_SUMMARY"
-      - name: Update PR coverage comment
+      - name: Export coverage report
+        id: coverage_output
         if: >-
-          always() && matrix.python-version == '3.12' && github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
-          github.event.pull_request.user.login != 'dependabot[bot]' && github.actor !=
-          'dependabot[bot]' && hashFiles('coverage/report.md') != ''
+          always() && matrix.python-version == '3.12' && hashFiles('coverage/report.md') != ''
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const fs = require('node:fs');
+            core.setOutput('report', fs.readFileSync('coverage/report.md', 'utf8'));
+
+  coverage-comment:
+    name: PR coverage comment
+    needs: quality
+    if: >-
+      always() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' && github.actor != 'dependabot[bot]'
+      && needs.quality.outputs.coverage_report != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Update PR coverage comment
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        env:
+          COVERAGE_REPORT: ${{ needs.quality.outputs.coverage_report }}
         with:
           retries: 3
           script: |
-            const fs = require('node:fs');
-            const body = fs.readFileSync('coverage/report.md', 'utf8');
+            const body = process.env.COVERAGE_REPORT;
             const marker = '<!-- similarstring-coverage -->';
+            if (!body?.startsWith(marker)) {
+              throw new Error('Coverage report is missing its marker.');
+            }
             const issue = { ...context.repo, issue_number: context.issue.number };
             try {
               const comments = await github.paginate(github.rest.issues.listComments, {

@@ -6,6 +6,7 @@ from copy import deepcopy
 from zipfile import ZipFile
 
 import pytest
+import yaml
 
 from scripts import project
 
@@ -61,11 +62,16 @@ def test_build_rejects_missing_runtime_file(source_tree):
         project.build_archive(source_tree)
 
 
-def test_build_rejects_invalid_version(source_tree):
-    (source_tree / "VERSION").write_text("../../unsafe", encoding="utf-8")
+@pytest.mark.parametrize(
+    "version", ["../../unsafe", "20260922", "2026-W39-2", "2026-09-31"]
+)
+def test_build_rejects_invalid_version(source_tree, version):
+    (source_tree / "VERSION").write_text(version, encoding="utf-8")
 
     with pytest.raises(ValueError):
         project.build_archive(source_tree)
+
+    assert not (source_tree / "dist").exists()
 
 
 def test_build_checks_python_syntax(source_tree):
@@ -157,6 +163,47 @@ def test_report_command_writes_report_and_enforces_gate(
     assert "workflow #9 for commit `c75b153`" in report
 
 
+def test_coverage_comment_publisher_is_isolated():
+    workflow = yaml.safe_load(
+        (project.ROOT / ".github/workflows/ci.yaml").read_text(encoding="utf-8")
+    )
+    assert workflow["permissions"] == {"contents": "read"}
+    quality = workflow["jobs"]["quality"]
+    assert quality["permissions"] == {"contents": "read"}
+    assert quality["outputs"]["coverage_report"] == (
+        "${{ steps.coverage_output.outputs.report }}"
+    )
+    report_step = next(
+        step for step in quality["steps"] if step.get("id") == "coverage_output"
+    )
+    assert "matrix.python-version == '3.12'" in report_step["if"]
+    write_jobs = {
+        name
+        for name, job in workflow["jobs"].items()
+        if job.get("permissions", {}).get("pull-requests") == "write"
+    }
+    assert write_jobs == {"coverage-comment"}
+    publisher = workflow["jobs"]["coverage-comment"]
+    assert publisher["needs"] == "quality"
+    assert publisher["permissions"] == {"pull-requests": "write"}
+    assert "github.event_name == 'pull_request'" in publisher["if"]
+    assert (
+        "github.event.pull_request.head.repo.full_name == github.repository"
+        in publisher["if"]
+    )
+    assert "dependabot[bot]" in publisher["if"]
+    assert len(publisher["steps"]) == 1
+    comment_step = publisher["steps"][0]
+    assert comment_step["uses"].startswith("actions/github-script@")
+    assert "run" not in comment_step
+    assert comment_step["env"]["COVERAGE_REPORT"] == (
+        "${{ needs.quality.outputs.coverage_report }}"
+    )
+    script = comment_step["with"]["script"]
+    assert "const body = process.env.COVERAGE_REPORT;" in script
+    assert "${{" not in script
+
+
 @pytest.fixture
 def smoke_runner(tmp_path):
     if not shutil.which("bash") or not shutil.which("jq"):
@@ -182,7 +229,13 @@ esac
     curl.chmod(0o755)
     calls_path = tmp_path / "curl-calls.txt"
 
-    def run(health_result="ready", startup_timeout="1"):
+    def run(
+        health_result="ready",
+        startup_timeout="1",
+        *,
+        script="test_ml_server.sh",
+        extra_env=None,
+    ):
         environment = {
             **os.environ,
             "PATH": f"{tmp_path}{os.pathsep}{os.environ['PATH']}",
@@ -191,8 +244,10 @@ esac
             "HEALTH_RESULT": health_result,
             "CURL_CALLS": str(calls_path),
         }
+        if extra_env:
+            environment.update(extra_env)
         result = subprocess.run(
-            ["bash", str(project.ROOT / "test_ml_server.sh")],
+            ["bash", str(project.ROOT / script)],
             env=environment,
             capture_output=True,
             text=True,
@@ -202,6 +257,43 @@ esac
         return result, calls
 
     return run
+
+
+@pytest.mark.parametrize("exit_code", [0, 1])
+def test_compose_integration_removes_local_images(smoke_runner, tmp_path, exit_code):
+    docker = tmp_path / "docker"
+    docker.write_text(
+        """#!/bin/sh
+printf '%s\\n' "$*" >> "$DOCKER_CALLS"
+case "$*" in
+  *" up "*) exit "$COMPOSE_UP_EXIT" ;;
+  *" ps "*) echo 'test-container' ;;
+  "inspect "*) echo '5000' ;;
+esac
+""",
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    calls_path = tmp_path / "docker-calls.txt"
+    result, curl_calls = smoke_runner(
+        script="tests/integration-tests-docker-compose.sh",
+        extra_env={
+            "DOCKER_CALLS": str(calls_path),
+            "COMPOSE_UP_EXIT": str(exit_code),
+        },
+    )
+
+    assert result.returncode == exit_code
+    calls = calls_path.read_text().splitlines()
+    assert calls[-1].endswith(" down --volumes --rmi local")
+    project_names = {
+        call.split("--project-name ", 1)[1].split()[0]
+        for call in calls
+        if call.startswith("compose ")
+    }
+    assert len(project_names) == 1
+    assert project_names.pop().startswith("similarstring-compose-test-")
+    assert len(curl_calls) == (4 if exit_code == 0 else 0)
 
 
 def test_smoke_startup_retries_are_quiet_on_success(smoke_runner):
