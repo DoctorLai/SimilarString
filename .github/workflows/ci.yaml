@@ -2,48 +2,141 @@ name: Similarity Sentence API CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  quality:
+    name: Quality (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      coverage_report: ${{ steps.coverage_output.outputs.report }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    env:
+      COVERAGE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Ruff format
-        uses: astral-sh/ruff-action@v1
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          args: check --config .ruff.toml
-
-      - name: Set up environment
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install development dependencies
         run: |
-          source ./setup-env.sh
-          echo "SS_PATH=$SS_PATH" >> $GITHUB_ENV
-          echo "SS_DOCKER_IMAGE=$SS_DOCKER_IMAGE" >> $GITHUB_ENV
-          echo "HOST_PORT=$HOST_PORT" >> $GITHUB_ENV
-          echo "FLASK_ENV=$FLASK_ENV" >> $GITHUB_ENV
+          python -m pip install -r requirements-dev.txt
+          npm ci
+      - name: Format, lint, coverage, and build
+        run: npm run check
+      - name: Coverage summary
+        if: ${{ always() && hashFiles('coverage/coverage.json') != '' }}
+        run: python scripts/project.py coverage-report >> "$GITHUB_STEP_SUMMARY"
+      - name: Export coverage report
+        id: coverage_output
+        if: >-
+          always() && matrix.python-version == '3.12' && hashFiles('coverage/report.md') != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const fs = require('node:fs');
+            core.setOutput('report', fs.readFileSync('coverage/report.md', 'utf8'));
 
-      # - name: Install dependencies
-      #   run: |
-      #     pip install transformers huggingface_hub
+  coverage-comment:
+    name: PR coverage comment
+    needs: quality
+    if: >-
+      always() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' && github.actor != 'dependabot[bot]'
+      && needs.quality.outputs.coverage_report != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Update PR coverage comment
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        env:
+          COVERAGE_REPORT: ${{ needs.quality.outputs.coverage_report }}
+        with:
+          retries: 3
+          script: |
+            const body = process.env.COVERAGE_REPORT;
+            const marker = '<!-- similarstring-coverage -->';
+            if (!body?.startsWith(marker)) {
+              throw new Error('Coverage report is missing its marker.');
+            }
+            const issue = { ...context.repo, issue_number: context.issue.number };
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...issue,
+                per_page: 100,
+              });
+              const previous = comments.find(comment =>
+                comment.user?.login === 'github-actions[bot]' &&
+                comment.body?.startsWith(marker)
+              );
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  ...context.repo,
+                  comment_id: previous.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({ ...issue, body });
+              }
+            } catch (error) {
+              if (error.status !== 403) throw error;
+              core.warning('PR comments are restricted; coverage is in the job summary.');
+            }
 
-      # - name: Log in to Hugging Face
-      #   run: |
-      #     echo "HF_HOME=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
-      #     huggingface-cli login --token ${{ secrets.HF_TOKEN }}
-
-      - name: Install docker-compose
+  integration:
+    name: Docker and Compose
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Check shell syntax
         run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-
-      - name: Run integration tests 0
+          for script in *.sh tests/*.sh; do
+            bash -n "$script"
+          done
+      - name: Docker real-model tests
         run: ./tests/integration-tests-docker.sh
-
-      - name: Run integration tests 1
+      - name: Compose real-model tests
         run: ./tests/integration-tests-docker-compose.sh
 
+  build:
+    if: ${{ always() }}
+    needs: [quality, integration]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require all checks
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+        run: '[[ "$QUALITY_RESULT" == "success" && "$INTEGRATION_RESULT" == "success" ]]'

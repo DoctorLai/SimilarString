@@ -6,4 +6,4 @@ if [ -z "$SS_PATH" ]; then
   exit 1
 fi
 
-./build.sh && ./restart.sh
+"$SS_PATH/build.sh" && "$SS_PATH/restart.sh"

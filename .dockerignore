@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!.dockerignore
+!requirements.txt
+!server.py
+!config.yaml
+!VERSION

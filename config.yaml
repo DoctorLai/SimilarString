@@ -1,13 +1,15 @@
 model:
-  name: 'paraphrase-MiniLM-L6-v2'  # distilroberta-base, paraphrase-MiniLM-L6-v2, stsb-roberta-large
-  device: 'auto'  # Automatically choose 'cuda' if available, otherwise 'cpu'
-  precision: 'float16'  # Options: 'float32', 'float16'
+  name: "paraphrase-MiniLM-L6-v2" # distilroberta-base, paraphrase-MiniLM-L6-v2, stsb-roberta-large
+  device: "auto" # Automatically choose 'cuda' if available, otherwise 'cpu'
+  precision: "float32" # Use float16 for compatible GPU deployments
 
 cache:
-  enabled: false  # Enable or disable embedding caching
+  enabled: false # Enable or disable embedding caching
+  max_size: 1024
 
 server:
-  host: '0.0.0.0'
+  host: "0.0.0.0"
   port: 5000
-  workers: 4  # Number of Gunicorn workers
-  debug: true
+  workers: 4 # Number of Gunicorn workers
+  debug: false
+  max_request_bytes: 1048576

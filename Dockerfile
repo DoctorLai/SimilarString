@@ -1,32 +1,27 @@
-# Use an official Python image with a smaller footprint
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-# Set the working directory
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_ENV=production \
+    FLASK_APP=server.py \
+    HF_HOME=/home/app/.cache/huggingface \
+    HF_HUB_DISABLE_TELEMETRY=1
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-# Install Python dependencies from requirements.txt
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install huggingface_hub[hf_xet]
+RUN pip install --no-cache-dir --index-url "$TORCH_INDEX_URL" 'torch>=2.6,<3' \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Add application code to the Docker image
-ADD . /app
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /home/app/.cache/huggingface \
+    && chown -R app:app /home/app/.cache
+COPY --chown=app:app server.py config.yaml VERSION ./
+USER app
 
-# Set environment variables
-ENV FLASK_ENV=production
-# Set to "development" for development mode
-ENV FLASK_APP=server.py
-# Flask needs to know the entry point of the app
-
-# Expose the Flask app's port
 EXPOSE 5000
+HEALTHCHECK --interval=10s --timeout=5s --start-period=300s --retries=3 \
+    CMD python -c "import os, urllib.request, yaml; config = yaml.safe_load(open(os.environ.get('SIMILARSTRING_CONFIG', '/app/config.yaml'))); port = config.get('server', {}).get('port', 5000); urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=4)"
 
-# Define the command to run the Flask server
-CMD ["python3", "server.py"]
+CMD ["python", "server.py"]
