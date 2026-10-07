@@ -55,7 +55,7 @@ jobs:
         id: coverage_output
         if: >-
           always() && matrix.python-version == '3.12' && hashFiles('coverage/report.md') != ''
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const fs = require('node:fs');
@@ -75,7 +75,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Update PR coverage comment
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
           COVERAGE_REPORT: ${{ needs.quality.outputs.coverage_report }}
         with:
